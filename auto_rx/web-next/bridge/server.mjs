@@ -43,6 +43,12 @@ async function loadStationFromConfig() {
   }
 }
 
+// Every field the log file format (auto_rx/autorx/logger.py LOG_HEADER) also
+// records, so the history this bridge accumulates has the same variables
+// available for future panels, not just the ones the first dashboard uses.
+// snr/f_error are only present on some decoder paths - left undefined (and
+// so absent from the JSON record) when the message doesn't carry them,
+// same "missing means absent" behaviour the rest of the UI already relies on.
 function recordFor(msg) {
   const rangeKm =
     station.lat !== 0 || station.lon !== 0 ? haversineKm(station.lat, station.lon, msg.lat, msg.lon) : null;
@@ -53,9 +59,14 @@ function recordFor(msg) {
     lon: msg.lon,
     vel_v: msg.vel_v,
     vel_h: msg.vel_h,
+    heading: msg.heading,
     temp: msg.temp,
     humidity: msg.humidity,
     pressure: msg.pressure,
+    snr: msg.snr,
+    f_error: msg.f_error,
+    sats: msg.sats,
+    batt: msg.batt,
     range_km: rangeKm,
     type: msg.type,
   };
