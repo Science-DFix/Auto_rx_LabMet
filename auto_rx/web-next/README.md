@@ -33,7 +33,7 @@ Reconstrução da interface com Svelte, mantendo o mesmo contrato de API:
 
 ## Requisitos
 
-- O backend do auto_rx já rodando (`python auto_rx.py`, como sempre) — este protótipo **não substitui** o backend, só a página que você abre no navegador.
+- O backend do auto_rx compilado e configurado (veja o [README raiz](../../README.md) para compilar os decodificadores) — este protótipo **não substitui** o backend, só a página que você abre no navegador. Pode já estar rodando à parte, ou ser iniciado junto (veja `AUTORX_START_BACKEND` abaixo).
 - Node.js 18+ e npm.
 - **Docker** — só se você quiser a aba "Gráficos" (Grafana). O resto do protótipo (Ao vivo, Histórico) funciona perfeitamente sem Docker.
 
@@ -41,28 +41,43 @@ Tudo roda 100% na sua própria máquina, em `127.0.0.1`/`localhost` — nenhuma 
 
 ## Como rodar
 
-**Opção recomendada — tudo de uma vez** (backend do bridge + Grafana, se o Docker estiver disponível + o Vite):
+**Opção 1 — um único comando pra tudo**, incluindo o próprio `auto_rx.py` (recepção + bridge + Grafana + Vite):
 
 ```bash
 cd auto_rx/web-next
 npm install      # só na primeira vez
+
+AUTORX_START_BACKEND=1 npm run dev:all
+```
+
+Isso é o mais próximo de "um comando só para acompanhar a sondagem em tempo real": sobe o backend Python (se `auto_rx/station.cfg` já existir e estiver configurado - veja o [README raiz](../../README.md) para compilar/configurar), o serviço-ponte de histórico, o Grafana (se o Docker estiver disponível) e o Vite, todos juntos. `Ctrl+C` encerra tudo que este script iniciou (o container do Grafana fica rodando entre sessões — é só `docker compose ... down` se quiser derrubar de vez, veja abaixo).
+
+Se preferir usar um Python específico (ex.: de um venv) ou passar argumentos extra pro `auto_rx.py`:
+
+```bash
+AUTORX_START_BACKEND=1 AUTORX_PYTHON=/caminho/para/venv/bin/python3 AUTORX_PY_ARGS="--verbose" npm run dev:all
+```
+
+**Opção 2 — tudo, exceto o backend** (se você já roda o `auto_rx.py` à parte, ou ainda não compilou/configurou):
+
+```bash
 npm run dev:all
 ```
 
-Um `Ctrl+C` encerra o Vite e o serviço-ponte; o container do Grafana continua rodando em segundo plano entre uma sessão e outra (é só um `docker compose ... down` se quiser derrubar de vez, veja abaixo).
+Sobe bridge + Grafana + Vite, assumindo que o `auto_rx.py` já está rodando em outro terminal (comportamento padrão, sem `AUTORX_START_BACKEND`).
 
-**Opção manual**, se preferir rodar cada peça separada (ou não usar Docker/Grafana):
+**Opção 3 — só a interface**, sem bridge nem Grafana:
 
 ```bash
 npm run dev
 ```
 
-Isso sobe só o servidor de desenvolvimento em `http://127.0.0.1:5173`. O protótipo faz proxy de todas as chamadas de API e do Socket.IO para o backend Flask em `http://127.0.0.1:5000` (a porta padrão do `web_port` no `station.cfg`).
+---
 
-Se o seu `station.cfg` usa uma porta diferente, aponte o proxy para ela (vale para `dev` e `dev:all`):
+Em qualquer uma das opções, o protótipo faz proxy de todas as chamadas de API e do Socket.IO para o backend Flask em `http://127.0.0.1:5000` (a porta padrão do `web_port` no `station.cfg`). Se o seu `station.cfg` usa uma porta diferente:
 
 ```bash
-AUTORX_BACKEND=http://127.0.0.1:5050 npm run dev
+AUTORX_BACKEND=http://127.0.0.1:5050 npm run dev:all
 ```
 
 Não precisa editar nenhum arquivo do backend — o proxy fica todo contido no `vite.config.js` deste protótipo.
@@ -133,6 +148,6 @@ web-next/
 ├── grafana/
 │   ├── docker-compose.yml
 │   └── provisioning/         # datasource Infinity + dashboard, como código
-├── dev-all.mjs                # sobe bridge + Grafana + Vite juntos (npm run dev:all)
+├── dev-all.mjs                # sobe backend (opcional) + bridge + Grafana + Vite juntos (npm run dev:all)
 └── vite.config.js            # proxy para o backend Flask
 ```

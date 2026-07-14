@@ -40,6 +40,53 @@ Construído em cima dos demoduladores de [rs1729/RS](https://github.com/rs1729/R
 * APRS-IS, para exibição em sites como o [radiosondy.info](https://radiosondy.info).
 * [ChaseMapper](https://github.com/projecthorus/chasemapper), para perseguição móvel de radiossondas.
 
+### Compilando o código-fonte
+
+Os decodificadores (`demod/`, `imet/`, `mk2a/`, `scan/`, `dropsonde/`, `utils/`, `weathex/`) são em C e precisam ser compilados antes de rodar o `auto_rx.py`. Testado em Debian/Ubuntu.
+
+**1. Dependências de sistema:**
+
+```bash
+sudo apt-get update
+sudo apt-get install -y \
+  autoconf automake build-essential cmake git \
+  libatlas-base-dev libsamplerate0-dev libusb-1.0-0-dev \
+  ninja-build pkg-config \
+  python3 python3-dev python3-pip python3-venv \
+  libavahi-client-dev libbsd-dev libfftw3-dev \
+  libiniparser-dev libogg-dev libopus-dev \
+  rtl-sdr sox
+```
+
+(`rtl-sdr` acima é o pacote pronto do Debian/Ubuntu — suficiente para a maioria dos casos. Se precisar de recursos mais recentes de bias-tee/kernel driver detach, compile o [librtlsdr](https://github.com/steve-m/librtlsdr) a partir do código-fonte, como o [`Dockerfile`](Dockerfile) deste repositório faz.)
+
+**2. Dependências Python:**
+
+```bash
+cd auto_rx
+python3 -m venv venv && source venv/bin/activate   # opcional, mas recomendado
+pip install -r requirements.txt
+```
+
+**3. Compilar os decodificadores:**
+
+```bash
+cd auto_rx
+./build.sh
+```
+
+Isso compila tudo a partir do `Makefile` na raiz e copia os binários resultantes (`rs41mod`, `dfm09mod`, `m10mod`, `fsk_demod`, `dft_detect`, etc.) para dentro de `auto_rx/`, prontos para o `auto_rx.py` usar. Para limpar tudo e recompilar do zero: `./clean.sh` seguido de `./build.sh`.
+
+**4. Configurar e rodar:**
+
+```bash
+cp station.cfg.example station.cfg
+# edite station.cfg: callsign, localização, tipo de SDR, etc.
+python3 auto_rx.py
+```
+
+Documentação completa de instalação/configuração (incluindo SpyServer, KA9Q, rotores, uploaders): [wiki do projeto original](https://github.com/projecthorus/radiosonde_auto_rx/wiki).
+
 ### Sondas suportadas
 
 Fabricante | Modelo | Posição | Temperatura | Umidade | Pressão | XDATA
