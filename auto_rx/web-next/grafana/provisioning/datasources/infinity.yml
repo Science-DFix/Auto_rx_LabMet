@@ -1,0 +1,10 @@
+apiVersion: 1
+
+datasources:
+  - name: auto_rx History Bridge
+    type: yesoreyeram-infinity-datasource
+    uid: autorx-history-bridge
+    access: proxy
+    isDefault: true
+    jsonData:
+      datasource_mode: basic

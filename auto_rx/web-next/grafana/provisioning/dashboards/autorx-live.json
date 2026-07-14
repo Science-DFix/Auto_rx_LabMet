@@ -1,0 +1,223 @@
+{
+  "id": null,
+  "uid": "autorx-live-eval",
+  "title": "auto_rx - Avaliação Gráfica (tempo real)",
+  "tags": ["auto_rx"],
+  "timezone": "browser",
+  "refresh": "5s",
+  "time": { "from": "now-30m", "to": "now" },
+  "schemaVersion": 39,
+  "templating": {
+    "list": [
+      {
+        "name": "sonde_id",
+        "type": "query",
+        "label": "Sonde",
+        "refresh": 2,
+        "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "autorx-history-bridge" },
+        "query": {
+          "queryType": "infinity",
+          "type": "json",
+          "source": "url",
+          "url": "http://127.0.0.1:4500/sondes",
+          "root_selector": "",
+          "format": "table",
+          "parser": "backend"
+        },
+        "current": {}
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Altitude x Tempo",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "lengthm" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "autorx-history-bridge" },
+          "type": "json",
+          "source": "url",
+          "url": "http://127.0.0.1:4500/history/${sonde_id}",
+          "root_selector": "",
+          "format": "table",
+          "parser": "backend",
+          "columns": [
+            { "selector": "time", "text": "Time", "type": "timestamp_epoch" },
+            { "selector": "alt", "text": "Altitude (m)", "type": "number" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Deslocamento (distância da estação) x Tempo",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "lengthkm" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "autorx-history-bridge" },
+          "type": "json",
+          "source": "url",
+          "url": "http://127.0.0.1:4500/history/${sonde_id}",
+          "root_selector": "",
+          "format": "table",
+          "parser": "backend",
+          "columns": [
+            { "selector": "time", "text": "Time", "type": "timestamp_epoch" },
+            { "selector": "range_km", "text": "Distância (km)", "type": "number" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "xychart",
+      "title": "Velocidade x Altitude",
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 8 },
+      "options": {
+        "mapping": "manual",
+        "series": [
+          {
+            "x": "Altitude (m)",
+            "y": "Vel. vertical (m/s)",
+            "pointSize": { "fixed": 4 },
+            "pointColor": { "fixed": "blue" },
+            "show": "points"
+          },
+          {
+            "x": "Altitude (m)",
+            "y": "Vel. horizontal (m/s)",
+            "pointSize": { "fixed": 4 },
+            "pointColor": { "fixed": "orange" },
+            "show": "points"
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "autorx-history-bridge" },
+          "type": "json",
+          "source": "url",
+          "url": "http://127.0.0.1:4500/history/${sonde_id}",
+          "root_selector": "",
+          "format": "table",
+          "parser": "backend",
+          "columns": [
+            { "selector": "alt", "text": "Altitude (m)", "type": "number" },
+            { "selector": "vel_v", "text": "Vel. vertical (m/s)", "type": "number" },
+            { "selector": "vel_h", "text": "Vel. horizontal (m/s)", "type": "number" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "xychart",
+      "title": "Temperatura x Altitude",
+      "gridPos": { "h": 9, "w": 8, "x": 12, "y": 8 },
+      "options": {
+        "mapping": "manual",
+        "series": [
+          {
+            "x": "Altitude (m)",
+            "y": "Temperatura (°C)",
+            "pointSize": { "fixed": 4 },
+            "pointColor": { "fixed": "red" },
+            "show": "points"
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "autorx-history-bridge" },
+          "type": "json",
+          "source": "url",
+          "url": "http://127.0.0.1:4500/history/${sonde_id}",
+          "root_selector": "",
+          "format": "table",
+          "parser": "backend",
+          "columns": [
+            { "selector": "alt", "text": "Altitude (m)", "type": "number" },
+            { "selector": "temp", "text": "Temperatura (°C)", "type": "number" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "xychart",
+      "title": "Umidade x Altitude",
+      "gridPos": { "h": 9, "w": 8, "x": 0, "y": 17 },
+      "options": {
+        "mapping": "manual",
+        "series": [
+          {
+            "x": "Altitude (m)",
+            "y": "Umidade (%)",
+            "pointSize": { "fixed": 4 },
+            "pointColor": { "fixed": "green" },
+            "show": "points"
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "autorx-history-bridge" },
+          "type": "json",
+          "source": "url",
+          "url": "http://127.0.0.1:4500/history/${sonde_id}",
+          "root_selector": "",
+          "format": "table",
+          "parser": "backend",
+          "columns": [
+            { "selector": "alt", "text": "Altitude (m)", "type": "number" },
+            { "selector": "humidity", "text": "Umidade (%)", "type": "number" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "xychart",
+      "title": "Pressão x Altitude",
+      "gridPos": { "h": 9, "w": 8, "x": 8, "y": 17 },
+      "options": {
+        "mapping": "manual",
+        "series": [
+          {
+            "x": "Altitude (m)",
+            "y": "Pressão (hPa)",
+            "pointSize": { "fixed": 4 },
+            "pointColor": { "fixed": "purple" },
+            "show": "points"
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "autorx-history-bridge" },
+          "type": "json",
+          "source": "url",
+          "url": "http://127.0.0.1:4500/history/${sonde_id}",
+          "root_selector": "",
+          "format": "table",
+          "parser": "backend",
+          "columns": [
+            { "selector": "alt", "text": "Altitude (m)", "type": "number" },
+            { "selector": "pressure", "text": "Pressão (hPa)", "type": "number" }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+name: autorx-grafana-eval
+
+services:
+  grafana:
+    image: grafana/grafana-oss:11.4.0
+    container_name: autorx-grafana
+    network_mode: host
+    environment:
+      - GF_INSTALL_PLUGINS=yesoreyeram-infinity-datasource
+      # Local evaluation only: anonymous access + embedding allowed so the
+      # web-next prototype can show dashboards in an iframe without a login
+      # screen. Do not run this configuration anywhere reachable outside
+      # your own machine.
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+      - GF_SECURITY_ALLOW_EMBEDDING=true
+      - GF_SECURITY_COOKIE_SAMESITE=disabled
+    volumes:
+      - ./provisioning:/etc/grafana/provisioning
+      - grafana-data:/var/lib/grafana
+
+volumes:
+  grafana-data:

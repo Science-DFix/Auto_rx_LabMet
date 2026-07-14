@@ -7,13 +7,14 @@
   import SettingsPanel from './lib/SettingsPanel.svelte';
   import ScanChart from './lib/ScanChart.svelte';
   import HistoricalView from './lib/HistoricalView.svelte';
+  import GrafanaView from './lib/GrafanaView.svelte';
   import { connection, taskSummary, sondes, config, settings } from './lib/store.svelte.js';
   import { getConfig, getVersion } from './lib/api.js';
   import { initSocket } from './lib/socket.js';
 
   let controlsOpen = $state(false);
   let settingsOpen = $state(false);
-  let view = $state('live'); // 'live' | 'historical'
+  let view = $state('live'); // 'live' | 'historical' | 'graphs'
   let versionInfo = $state(null);
 
   onMount(() => {
@@ -68,6 +69,7 @@
       <nav class="view-switch">
         <button class:active={view === 'live'} onclick={() => (view = 'live')}>Ao vivo</button>
         <button class:active={view === 'historical'} onclick={() => (view = 'historical')}>Histórico</button>
+        <button class:active={view === 'graphs'} onclick={() => (view = 'graphs')}>Gráficos</button>
       </nav>
     </div>
     <div class="status-group">
@@ -125,9 +127,13 @@
         </div>
       </section>
     </main>
-  {:else}
+  {:else if view === 'historical'}
     <main class="historical-main">
       <HistoricalView />
+    </main>
+  {:else}
+    <main class="historical-main">
+      <GrafanaView />
     </main>
   {/if}
 </div>
