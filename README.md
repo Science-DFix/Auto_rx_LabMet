@@ -1,59 +1,65 @@
-![auto_rx logo](autorx.png)
-# Automatic Radiosonde Receiver Utilities
+# Auto_rx LabMet
 
-**Please refer to the [auto_rx wiki](https://github.com/projecthorus/radiosonde_auto_rx/wiki) for the latest information.**
+Recepção e rastreamento automático de radiossondas — mantido por **[Science-DFix](https://github.com/Science-DFix)**.
 
-This project is built around [rs1279's RS](https://github.com/rs1729/RS) demodulators, and provides a set of utilities ('auto_rx') to allow automatic reception and uploading of [Radiosonde](https://en.wikipedia.org/wiki/Radiosonde) positions to multiple services, including:
+Este repositório é um **fork de trabalho** do [`radiosonde_auto_rx`](https://github.com/projecthorus/radiosonde_auto_rx) original, criado por Mark Jessop (VK5QI) e colaboradores. Toda a base de captura, demodulação e decodificação de radiossondas vem de lá — o que estamos construindo aqui em cima é o nosso próprio trabalho de evolução do projeto, começando pela **interface web**.
 
-* The [SondeHub Radiosonde Tracker](https://tracker.sondehub.org) - a tracking website specifically designed for tracking radiosondes!
-* APRS-IS, for display on sites such as [radiosondy.info](https://radiosondy.info). (Note that aprs.fi now blocks radiosonde traffic.)
-* [ChaseMapper](https://github.com/projecthorus/chasemapper) for mobile
-  radiosonde chasing.
+## Foco atual: modernizar o painel web
 
-Auto-RX's [Web Interface](https://github.com/projecthorus/radiosonde_auto_rx/wiki/Web-Interface-Guide) provides a way of seeing the live status of your station, and also a means of reviewing and analysing previous radiosonde flights. Collected meteorological data can be plotted in the common 'Skew-T' format.
+A ideia inicial deste fork é revisar e melhorar a camada de apresentação (o painel web de acompanhamento em tempo real), mantendo o pipeline de recepção/decodificação exatamente como está. Duas frentes em andamento:
 
-### Radiosonde Support Matrix
+- **Correções de confiabilidade** no painel atual (`auto_rx/autorx/templates/index.html`) — reconexão de socket, limite de crescimento do log, tratamento de falha no carregamento inicial.
+- **Protótipo novo em Svelte** (`auto_rx/web-next/`) — reconstrução da interface com mapa, controles, configurações, gráfico de varredura e um diagrama Skew-T de perfil atmosférico por voo (algo que o painel original nunca chegou a integrar de fato). Veja [`auto_rx/web-next/README.md`](auto_rx/web-next/README.md) para rodar e avaliar localmente.
 
-Manufacturer | Model | Position | Temperature | Humidity | Pressure | XDATA
--------------|-------|----------|-------------|----------|----------|------
-Vaisala | RS92-SGP/NGP | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:
-Vaisala | RS41-SG/SGP/SGM | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: (for -SGP) | :heavy_check_mark:
-Graw | DFM06/09/17 | :heavy_check_mark: | :heavy_check_mark: | :x: | :x: | :heavy_check_mark:
-Meteomodem | M10 | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | Not Sent | :x:
-Meteomodem | M20 | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: (For some models) | :x:
-Intermet Systems | iMet-4 | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:
-Intermet Systems | iMet-54 | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | Not Sent | :x:
-Lockheed Martin | LMS6-400/1680 | :heavy_check_mark: | :x: | :x: | :x: | Not Sent
-Meisei | iMS-100 | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :x: | Not Sent
-Meisei | RS11G | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :x: | Not Sent
-Meteo-Radiy | MRZ-H1 (400 MHz) | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :x: | Not Sent
-Meteosis | MTS01 | :heavy_check_mark: | :heavy_check_mark: | :x: | :x: | Not Sent
+Isso é trabalho em andamento — o pipeline de rádio (scan, decodificadores, uploaders) segue idêntico ao upstream por enquanto.
 
-Support for other radiosondes may be added as required - please send us sondes to test with! If you have any information about telemetry formats, we'd love to hear from you (see our contact details below).
+---
 
-Improvements from the upstream RS codebase will be merged into this codebase when/where appropriate. A big thanks to rs1729 for continuing to develop and improve these decoders, and working with us to make auto_rx decode *all* the radiosondes!
+## O que é o auto_rx
 
-### Updates
+Construído em cima dos demoduladores de [rs1729/RS](https://github.com/rs1729/RS), o `auto_rx` recebe automaticamente sinais de [radiossondas](https://pt.wikipedia.org/wiki/Radiossonda) via RTL-SDR (ou SDRs de rede) e envia as posições para múltiplos serviços, incluindo:
 
-**This software is under regular development. Please [update regularly](https://github.com/projecthorus/radiosonde_auto_rx/wiki/Performing-Updates) to get bug-fixes and improvements!**
+* O [SondeHub Radiosonde Tracker](https://tracker.sondehub.org) — site de rastreamento dedicado a radiossondas.
+* APRS-IS, para exibição em sites como o [radiosondy.info](https://radiosondy.info).
+* [ChaseMapper](https://github.com/projecthorus/chasemapper), para perseguição móvel de radiossondas.
 
-Please consider joining the Google Group to receive updates on new software features:
-https://groups.google.com/forum/#!forum/radiosonde_auto_rx
+### Sondas suportadas
 
-We also have a channel in the SondeHub Discord server: https://sondehub.org/go/discord
+Fabricante | Modelo | Posição | Temperatura | Umidade | Pressão | XDATA
+-----------|--------|---------|-------------|---------|---------|------
+Vaisala | RS92-SGP/NGP | ✅ | ✅ | ✅ | ✅ | ✅
+Vaisala | RS41-SG/SGP/SGM | ✅ | ✅ | ✅ | ✅ (para -SGP) | ✅
+Graw | DFM06/09/17 | ✅ | ✅ | ❌ | ❌ | ✅
+Meteomodem | M10 | ✅ | ✅ | ✅ | Não enviado | ❌
+Meteomodem | M20 | ✅ | ✅ | ✅ | ✅ (em alguns modelos) | ❌
+Intermet Systems | iMet-4 | ✅ | ✅ | ✅ | ✅ | ✅
+Intermet Systems | iMet-54 | ✅ | ✅ | ✅ | Não enviado | ❌
+Lockheed Martin | LMS6-400/1680 | ✅ | ❌ | ❌ | ❌ | Não enviado
+Meisei | iMS-100 | ✅ | ✅ | ✅ | ❌ | Não enviado
+Meisei | RS11G | ✅ | ✅ | ✅ | ❌ | Não enviado
+Meteo-Radiy | MRZ-H1 (400 MHz) | ✅ | ✅ | ✅ | ❌ | Não enviado
+Meteosis | MTS01 | ✅ | ✅ | ❌ | ❌ | Não enviado
 
-## Presentations
-* Linux.conf.au 2019 - https://www.youtube.com/watch?v=YBy-bXEWZeM
-* UKHAS Conference 2019 - [Presented via Skype](https://youtu.be/azDJmMywBgw?t=643) which had some audio issues at the start. Slides [here](https://rfhead.net/sondes/auto_rx_presentation_UKHAS2019.pdf).
+## Créditos e atribuição
 
-## Contacts
-* [Mark Jessop](https://github.com/darksidelemm) - vk5qi@rfhead.net
-* [Michaela Wheeler](https://github.com/TheSkorm) - radiosonde@michaela.lgbt
+Este projeto é um trabalho derivado de **[projecthorus/radiosonde_auto_rx](https://github.com/projecthorus/radiosonde_auto_rx)**, licenciado sob GNU GPL v3 — mantemos a mesma licença aqui (veja [`LICENSE`](LICENSE)).
 
-## Licensing Information
-All software within this repository is licensed under the GNU General Public License v3. Refer this repositories LICENSE file for the full license text.
+<img src="autorx.png" alt="Logo do projeto original radiosonde_auto_rx" width="360">
 
-Radiosonde telemetry data captured via this software and uploaded into the [Sondehub](https://sondehub.org/) Database system is licensed under [Creative Commons BY-SA v2.0](https://creativecommons.org/licenses/by-sa/2.0/). 
-Telemetry data uploaded into the APRS-IS network is generally considered to be released into the public domain. 
+- **Autores originais / mantenedores upstream:** [Mark Jessop (VK5QI)](https://github.com/darksidelemm) e [Michaela Wheeler](https://github.com/TheSkorm), e demais colaboradores listados no [histórico do projeto original](https://github.com/projecthorus/radiosonde_auto_rx/graphs/contributors).
+- **Decodificadores de radiossonda:** baseados no trabalho de [rs1729/RS](https://github.com/rs1729/RS).
+- **Documentação completa do pipeline original** (instalação, configuração, hardware suportado): [wiki do projeto original](https://github.com/projecthorus/radiosonde_auto_rx/wiki).
 
-By uploading data into these systems (by enabling the relevant uploaders within the `station.cfg` file) you as the user agree for your data to be made available under these licenses. Note that uploading to Sondehub is enabled by default. 
+Para acompanhar atualizações do projeto original, o remote `upstream` já está configurado neste repositório:
+
+```bash
+git fetch upstream
+```
+
+## Licenciamento
+
+Todo o software neste repositório é licenciado sob a GNU General Public License v3 — veja o arquivo [`LICENSE`](LICENSE) para o texto completo.
+
+Dados de telemetria de radiossonda enviados via este software para o banco de dados do [SondeHub](https://sondehub.org/) são licenciados sob [Creative Commons BY-SA v2.0](https://creativecommons.org/licenses/by-sa/2.0/). Dados enviados para a rede APRS-IS são geralmente considerados de domínio público.
+
+Ao habilitar os uploaders no `station.cfg`, você concorda que seus dados sejam disponibilizados sob essas licenças. O upload para o SondeHub vem habilitado por padrão.
