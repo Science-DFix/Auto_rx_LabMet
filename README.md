@@ -1,12 +1,29 @@
 # Auto_rx LabMet
 
-Recepção e rastreamento automático de radiossondas — mantido por **[Science-DFix](https://github.com/Science-DFix)**.
+Recepção e rastreamento automático de radiossondas.
 
-Este repositório é um **fork de trabalho** do [`radiosonde_auto_rx`](https://github.com/projecthorus/radiosonde_auto_rx) original, criado por Mark Jessop (VK5QI) e colaboradores. Toda a base de captura, demodulação e decodificação de radiossondas vem de lá — o que estamos construindo aqui em cima é o nosso próprio trabalho de evolução do projeto, começando pela **interface web**.
+Este repositório é uma **cópia de trabalho pessoal** do [`radiosonde_auto_rx`](https://github.com/projecthorus/radiosonde_auto_rx) — todo o mérito e a autoria do projeto são dos desenvolvedores originais, creditados abaixo. Não há aqui nenhuma pretensão de propriedade sobre o projeto original: este espaço existe apenas para eu estudar o código e contribuir com melhorias pontuais, começando pela **interface web**.
+
+## Créditos e atribuição
+
+Todo o trabalho de captura, demodulação e decodificação de radiossondas — a parte que realmente importa neste projeto — é dos desenvolvedores abaixo. Este fork só existe em cima do trabalho deles.
+
+<img src="autorx.png" alt="Logo do projeto original radiosonde_auto_rx" width="360">
+
+- **Projeto original:** [projecthorus/radiosonde_auto_rx](https://github.com/projecthorus/radiosonde_auto_rx), licenciado sob GNU GPL v3 (licença mantida neste repositório — veja [`LICENSE`](LICENSE)).
+- **Autores / mantenedores:** [Mark Jessop (VK5QI)](https://github.com/darksidelemm) e [Michaela Wheeler](https://github.com/TheSkorm), e todos os colaboradores listados no [histórico do projeto original](https://github.com/projecthorus/radiosonde_auto_rx/graphs/contributors).
+- **Decodificadores de radiossonda:** desenvolvidos por [rs1729/RS](https://github.com/rs1729/RS).
+- **Documentação completa do pipeline original** (instalação, configuração, hardware suportado): [wiki do projeto original](https://github.com/projecthorus/radiosonde_auto_rx/wiki).
+
+Para acompanhar atualizações do projeto original, o remote `upstream` já está configurado neste repositório:
+
+```bash
+git fetch upstream
+```
 
 ## Foco atual: modernizar o painel web
 
-A ideia inicial deste fork é revisar e melhorar a camada de apresentação (o painel web de acompanhamento em tempo real), mantendo o pipeline de recepção/decodificação exatamente como está. Duas frentes em andamento:
+A ideia inicial é revisar e melhorar a camada de apresentação (o painel web de acompanhamento em tempo real), mantendo o pipeline de recepção/decodificação exatamente como está. Duas frentes em andamento:
 
 - **Correções de confiabilidade** no painel atual (`auto_rx/autorx/templates/index.html`) — reconexão de socket, limite de crescimento do log, tratamento de falha no carregamento inicial.
 - **Protótipo novo em Svelte** (`auto_rx/web-next/`) — reconstrução da interface com mapa, controles, configurações, gráfico de varredura e um diagrama Skew-T de perfil atmosférico por voo (algo que o painel original nunca chegou a integrar de fato). Veja [`auto_rx/web-next/README.md`](auto_rx/web-next/README.md) para rodar e avaliar localmente.
@@ -39,22 +56,6 @@ Meisei | iMS-100 | ✅ | ✅ | ✅ | ❌ | Não enviado
 Meisei | RS11G | ✅ | ✅ | ✅ | ❌ | Não enviado
 Meteo-Radiy | MRZ-H1 (400 MHz) | ✅ | ✅ | ✅ | ❌ | Não enviado
 Meteosis | MTS01 | ✅ | ✅ | ❌ | ❌ | Não enviado
-
-## Créditos e atribuição
-
-Este projeto é um trabalho derivado de **[projecthorus/radiosonde_auto_rx](https://github.com/projecthorus/radiosonde_auto_rx)**, licenciado sob GNU GPL v3 — mantemos a mesma licença aqui (veja [`LICENSE`](LICENSE)).
-
-<img src="autorx.png" alt="Logo do projeto original radiosonde_auto_rx" width="360">
-
-- **Autores originais / mantenedores upstream:** [Mark Jessop (VK5QI)](https://github.com/darksidelemm) e [Michaela Wheeler](https://github.com/TheSkorm), e demais colaboradores listados no [histórico do projeto original](https://github.com/projecthorus/radiosonde_auto_rx/graphs/contributors).
-- **Decodificadores de radiossonda:** baseados no trabalho de [rs1729/RS](https://github.com/rs1729/RS).
-- **Documentação completa do pipeline original** (instalação, configuração, hardware suportado): [wiki do projeto original](https://github.com/projecthorus/radiosonde_auto_rx/wiki).
-
-Para acompanhar atualizações do projeto original, o remote `upstream` já está configurado neste repositório:
-
-```bash
-git fetch upstream
-```
 
 ## Licenciamento
 
