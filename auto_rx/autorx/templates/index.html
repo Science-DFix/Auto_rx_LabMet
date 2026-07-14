@@ -40,6 +40,13 @@
 
         var sonde_currently_following = "none";
 
+        // Cap on the number of rows kept in the live log tray, to avoid unbounded DOM growth.
+        var MAX_LOG_ROWS = 300;
+
+        // Connection-state tracking, used to show a "connection lost" banner and to
+        // re-sync data after a dropped Socket.IO connection is restored.
+        var has_connected_before = false;
+
         // Function to change CSS options when changing dark mode.
         function changeTheme(dark) {
             if (dark == false) {
@@ -126,6 +133,10 @@
                         $("#password-header").html("<h2>Web Control Disabled</h2>");
                         disable_web_controls();
                     }
+                  },
+                  error: function(jqXHR, textStatus, errorThrown) {
+                    console.error("Failed to load get_config: " + textStatus);
+                    $('#station_callsign').text("Error loading config");
                   }
             });
 
@@ -189,8 +200,11 @@
                         }
                     }
                 }
-                // Append entry to log table.
-                $('#log_data > tbody').prepend(log_entry);
+                // Append entry to log table, then trim old rows so the DOM/memory
+                // usage doesn't grow without bound over a multi-hour session.
+                var _log_tbody = $('#log_data > tbody');
+                _log_tbody.prepend(log_entry);
+                _log_tbody.children().slice(MAX_LOG_ROWS).remove();
             });
 
             setup_scan_chart();
@@ -802,53 +816,76 @@
 
             var initial_load_complete = false;
             selected_sonde = "";
-            $.ajax({ // Get archived data.
-                  url: "get_telemetry_archive",
-                  dataType: 'json',
-                  async: true,
-                  success: function(data) {
-                    for (sonde_id in data){
-                        var telem = data[sonde_id].latest_telem;
-                        sonde_positions[sonde_id] = {
-                            latest_data: telem,
-                            age: 0,
-                            colour: colour_values[colour_idx]
-                        };
-                        // Create markers
-                        sonde_positions[sonde_id].path = L.polyline(data[sonde_id].path,{title:telem.id + " Path", color:sonde_positions[sonde_id].colour}).addTo(mymap);
 
-                        if (getCookie('imperial') == 'true'){
-                            _alt = (telem.alt*3.28084).toFixed(0) + 'ft   ';
-                            _vel_v = (telem.vel_v*3.28084).toFixed(0) + 'ft/s   ';
-                            _vel_h = (telem.vel_h*2.23694).toFixed(0) + 'mph  ';
-                        } else {
-                            _alt = telem.alt.toFixed(0) + 'm   ';
-                            _vel_v = telem.vel_v.toFixed(1) + 'm/s   ';
-                            _vel_h = (telem.vel_h*3.6).toFixed(0) + 'km/h  ';
+            // Fetches the server-side telemetry archive and either creates map entries for
+            // sondes we haven't seen yet, or (when called again after a reconnect) fills in
+            // any path gaps for sondes we're already tracking, without recreating their marker.
+            function loadTelemetryArchive() {
+                return $.ajax({
+                      url: "get_telemetry_archive",
+                      dataType: 'json',
+                      async: true,
+                      success: function(data) {
+                        for (sonde_id in data){
+                            var telem = data[sonde_id].latest_telem;
+
+                            if (sonde_positions.hasOwnProperty(sonde_id)) {
+                                // Already tracking this sonde (e.g. after a reconnect) - just
+                                // refresh its path with the authoritative server-side history.
+                                sonde_positions[sonde_id].path.setLatLngs(data[sonde_id].path);
+                                continue;
+                            }
+
+                            sonde_positions[sonde_id] = {
+                                latest_data: telem,
+                                age: 0,
+                                colour: colour_values[colour_idx]
+                            };
+                            // Create markers
+                            sonde_positions[sonde_id].path = L.polyline(data[sonde_id].path,{title:telem.id + " Path", color:sonde_positions[sonde_id].colour}).addTo(mymap);
+
+                            if (getCookie('imperial') == 'true'){
+                                _alt = (telem.alt*3.28084).toFixed(0) + 'ft   ';
+                                _vel_v = (telem.vel_v*3.28084).toFixed(0) + 'ft/s   ';
+                                _vel_h = (telem.vel_h*2.23694).toFixed(0) + 'mph  ';
+                            } else {
+                                _alt = telem.alt.toFixed(0) + 'm   ';
+                                _vel_v = telem.vel_v.toFixed(1) + 'm/s   ';
+                                _vel_h = (telem.vel_h*3.6).toFixed(0) + 'km/h  ';
+                            }
+
+                            sonde_positions[sonde_id].marker = L.marker([telem.lat, telem.lon, telem.alt],{icon: sondeAscentIcons[sonde_positions[sonde_id].colour]})
+                                .bindTooltip('<div class="tooltip-container">' + sonde_id + '<div class="tooltip-container" style="color: #005ec1;">' + _alt +  _vel_v +  _vel_h + '</div></div>',{permanent:false, direction:'right', className: 'sondeTooltip', offset: [10,0], interactive: false, opacity: 0.7 })
+                                .addTo(mymap);
+
+                            // if(autorx_config.station_lat != 0.0){
+                            //     sonde_positions[sonde_id].los_path = L.polyline([],
+                            //         {
+                            //             color:los_color,
+                            //             opacity:los_opacity
+                            //         }
+                            //     ).addTo(mymap);
+                            // }
+
+                            if (telem.vel_v < 0){
+                                sonde_positions[sonde_id].marker.setIcon(sondeDescentIcons[sonde_positions[sonde_id].colour]);
+                            }
+
+                            colour_idx = (colour_idx+1)%colour_values.length;
                         }
+                        updateTelemetryTable();
+                      },
+                      error: function(jqXHR, textStatus, errorThrown) {
+                        // If this fails on initial load, we still need to let live telemetry/station
+                        // updates through below - otherwise the page silently stops updating forever
+                        // until the user refreshes it.
+                        console.error("Failed to load get_telemetry_archive: " + textStatus + ". Existing sonde tracks/markers were not restored/resynced.");
+                      }
+                });
+            }
 
-                        sonde_positions[sonde_id].marker = L.marker([telem.lat, telem.lon, telem.alt],{icon: sondeAscentIcons[sonde_positions[sonde_id].colour]})
-                            .bindTooltip('<div class="tooltip-container">' + sonde_id + '<div class="tooltip-container" style="color: #005ec1;">' + _alt +  _vel_v +  _vel_h + '</div></div>',{permanent:false, direction:'right', className: 'sondeTooltip', offset: [10,0], interactive: false, opacity: 0.7 })
-                            .addTo(mymap);
-
-                        // if(autorx_config.station_lat != 0.0){
-                        //     sonde_positions[sonde_id].los_path = L.polyline([],
-                        //         {
-                        //             color:los_color,
-                        //             opacity:los_opacity
-                        //         }
-                        //     ).addTo(mymap);
-                        // }
-
-                        if (telem.vel_v < 0){
-                            sonde_positions[sonde_id].marker.setIcon(sondeDescentIcons[sonde_positions[sonde_id].colour]);
-                        }
-
-                        colour_idx = (colour_idx+1)%colour_values.length;
-                    }
-                    updateTelemetryTable();
-                    initial_load_complete = true;
-                  }
+            loadTelemetryArchive().always(function() {
+                initial_load_complete = true;
             });
 
             socket.on('station_update', function(msg) {
@@ -1008,6 +1045,22 @@
             // Tell program we are connected and ready for data.
             socket.on('connect', function() {
                 socket.emit('client_connected', {data: 'I\'m connected!'});
+
+                $('#connection-lost-banner').hide();
+
+                if (has_connected_before) {
+                    // This is a reconnect after a dropped connection, not the initial page load -
+                    // re-sync anything that may have changed while we were disconnected.
+                    console.warn("Socket.IO reconnected - resyncing telemetry/task state.");
+                    loadTelemetryArchive();
+                    update_task_list();
+                }
+                has_connected_before = true;
+            });
+
+            socket.on('disconnect', function(reason) {
+                console.warn("Socket.IO disconnected: " + reason);
+                $('#connection-lost-banner').show();
             });
 
             // Function to change table columns visible.
@@ -1611,6 +1664,9 @@
 
     <!-- Wrapper for main screen -->
     <div id="main" onload="loadMap();">
+        <div id="connection-lost-banner" style="display:none; background-color:#b00020; color:white; text-align:center; padding:0.4em; font-size:2vh; font-size:calc(var(--vh, 1vh) * 2);">
+            Connection to server lost - attempting to reconnect...
+        </div>
         <div>
             <span style="font-size:3vh;font-size:calc(var(--vh, 1vh) * 3);cursor:pointer;" onclick="changeNav()"><span id="log-tray">&#9776;</span> Radiosonde Auto-RX <span id="currentversion" style="white-space:nowrap"></span></span>
         </div>
