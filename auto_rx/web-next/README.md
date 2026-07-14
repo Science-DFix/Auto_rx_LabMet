@@ -34,19 +34,32 @@ Reconstrução da interface com Svelte, mantendo o mesmo contrato de API:
 ## Requisitos
 
 - O backend do auto_rx já rodando (`python auto_rx.py`, como sempre) — este protótipo **não substitui** o backend, só a página que você abre no navegador.
-- Node.js 18+ e npm, só para rodar este protótipo (não é uma dependência do projeto principal).
+- Node.js 18+ e npm.
+- **Docker** — só se você quiser a aba "Gráficos" (Grafana). O resto do protótipo (Ao vivo, Histórico) funciona perfeitamente sem Docker.
+
+Tudo roda 100% na sua própria máquina, em `127.0.0.1`/`localhost` — nenhuma peça depende de rede externa ou de serviço na nuvem.
 
 ## Como rodar
+
+**Opção recomendada — tudo de uma vez** (backend do bridge + Grafana, se o Docker estiver disponível + o Vite):
 
 ```bash
 cd auto_rx/web-next
 npm install      # só na primeira vez
+npm run dev:all
+```
+
+Um `Ctrl+C` encerra o Vite e o serviço-ponte; o container do Grafana continua rodando em segundo plano entre uma sessão e outra (é só um `docker compose ... down` se quiser derrubar de vez, veja abaixo).
+
+**Opção manual**, se preferir rodar cada peça separada (ou não usar Docker/Grafana):
+
+```bash
 npm run dev
 ```
 
-Isso sobe um servidor de desenvolvimento em `http://127.0.0.1:5173`. Abra essa URL no navegador — o protótipo faz proxy de todas as chamadas de API e do Socket.IO para o backend Flask em `http://127.0.0.1:5000` (a porta padrão do `web_port` no `station.cfg`).
+Isso sobe só o servidor de desenvolvimento em `http://127.0.0.1:5173`. O protótipo faz proxy de todas as chamadas de API e do Socket.IO para o backend Flask em `http://127.0.0.1:5000` (a porta padrão do `web_port` no `station.cfg`).
 
-Se o seu `station.cfg` usa uma porta diferente, aponte o proxy para ela:
+Se o seu `station.cfg` usa uma porta diferente, aponte o proxy para ela (vale para `dev` e `dev:all`):
 
 ```bash
 AUTORX_BACKEND=http://127.0.0.1:5050 npm run dev
@@ -56,37 +69,27 @@ Não precisa editar nenhum arquivo do backend — o proxy fica todo contido no `
 
 ## Aba "Gráficos" (Grafana)
 
-O Flask/Socket.IO original só guarda a trilha (lat/lon/alt) de uma sonde em voo em memória — não acumula um histórico de velocidade/temperatura/umidade/pressão em nenhum lugar consultável por HTTP. Para a aba de gráficos funcionar em tempo real sem tocar no backend, existem duas peças extras:
+O Flask/Socket.IO original só guarda a trilha (lat/lon/alt) de uma sonde em voo em memória — não acumula um histórico de velocidade/temperatura/umidade/pressão em nenhum lugar consultável por HTTP. Para a aba de gráficos funcionar em tempo real sem tocar no backend, existem duas peças extras, ambas locais:
 
-1. **`bridge/server.mjs`** — um serviço Node pequeno que assina o mesmo Socket.IO que a interface usa, acumula o histórico completo por sonde em memória, e serve isso via HTTP simples para o Grafana consultar.
-2. **`grafana/`** — Grafana OSS rodando via Docker, com o plugin [Infinity](https://github.com/grafana-infinity-datasource/grafana-infinity-datasource) já provisionado apontando para o serviço acima, e um dashboard pronto com os painéis pedidos.
+1. **`bridge/server.mjs`** — um serviço Node pequeno que assina o mesmo Socket.IO que a interface usa, acumula o histórico completo por sonde em memória, e serve isso via HTTP simples para o Grafana consultar. Escuta em `http://127.0.0.1:4500`.
+2. **`grafana/`** — Grafana OSS rodando via Docker (container local, não é um serviço hospedado), com o plugin [Infinity](https://github.com/grafana-infinity-datasource/grafana-infinity-datasource) já provisionado apontando para o serviço acima, e um dashboard pronto com os painéis pedidos. Escuta em `http://localhost:3000`.
 
-### Como subir
+`npm run dev:all` já sobe as duas coisas junto com o Vite (pulando o Grafana automaticamente se o Docker não estiver instalado). Para subir/derrubar só o Grafana manualmente:
 
 ```bash
-# 1. Backend do auto_rx já rodando (como sempre)
-
-# 2. Serviço-ponte de histórico
-cd auto_rx/web-next
-AUTORX_BACKEND=http://127.0.0.1:5000 node bridge/server.mjs
-# escuta em http://127.0.0.1:4500
-
-# 3. Grafana
 cd auto_rx/web-next/grafana
-docker compose up -d
-# abre em http://localhost:3000 (dashboard "auto_rx - Avaliação Gráfica (tempo real)")
-
-# 4. Protótipo (se ainda não estiver rodando)
-cd auto_rx/web-next
-npm run dev
+docker compose up -d      # subir
+docker compose down       # derrubar (apaga o container, mantém os dashboards no volume)
 ```
 
 Depois é só abrir a aba **Gráficos** no protótipo — ela embute o dashboard do Grafana num iframe, com um seletor para escolher qual sonde ativa visualizar.
 
 **Aviso de segurança:** para o iframe funcionar sem tela de login, o `docker-compose.yml` habilita acesso anônimo e libera embedding no Grafana (`GF_AUTH_ANONYMOUS_ENABLED`, `GF_SECURITY_ALLOW_EMBEDDING`). Isso é aceitável só porque tudo roda em `127.0.0.1`/`localhost`, para avaliação local. **Não exponha essa configuração numa rede compartilhada ou na internet.**
 
+**Sobre rodar todas as abas ao mesmo tempo:** a conexão Socket.IO com o backend é aberta uma única vez (em `App.svelte`), independente da aba selecionada — trocar entre Ao vivo/Histórico/Gráficos não reconecta nem interrompe a recepção de telemetria, só troca o que é exibido. O serviço-ponte também mantém sua própria conexão independente com o backend. Se o Grafana ou o bridge não estiverem rodando, só a aba Gráficos fica indisponível (iframe com erro) — as outras abas continuam funcionando normalmente.
+
 **Limitações conhecidas desta primeira versão:**
-- O serviço-ponte guarda histórico só em memória (reinicia zerado, sem persistência).
+- O serviço-ponte guarda histórico só em memória (reinicia zerado, sem persistência, e cada sonde é limitada a 5000 pontos).
 - Os painéis do tipo "X por Y" (velocidade x altitude, variáveis x altitude) usam o painel `xychart` do Grafana, configurado via JSON diretamente — não tive como conferir visualmente o resultado neste ambiente (sem navegador gráfico). Se algum eixo aparecer errado, é só ajustar pelo editor de painel do próprio Grafana (`http://localhost:3000`).
 
 ## Como usar
@@ -130,5 +133,6 @@ web-next/
 ├── grafana/
 │   ├── docker-compose.yml
 │   └── provisioning/         # datasource Infinity + dashboard, como código
+├── dev-all.mjs                # sobe bridge + Grafana + Vite juntos (npm run dev:all)
 └── vite.config.js            # proxy para o backend Flask
 ```
